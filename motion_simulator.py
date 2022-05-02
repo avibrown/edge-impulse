@@ -1,4 +1,3 @@
-import pandas as pd # Overpowered - but readable :)
 import odrive       # Need to have odrivetool installed
 import time         # To set sampling frequency
 import threading    # For running a backround timer thread
@@ -20,7 +19,6 @@ Create a pandas dataframe to store our
 precious data! This will be exported as a .CSV file
 at the end of the script.
 '''
-df = pd.DataFrame(columns=['timestamp', 'current'])
 
 odrv0 = odrive.find_any() # Create ODrive object
 
@@ -63,22 +61,6 @@ vel_thread.start()  # Start your engines...
 _ = input('Hit enter to start data collection...')
 
 tim_thread.start()  # Start timer thread
-
-'''
-This loop runs for the duration of the timeout we set.
-Every 10 milliseconds new data is polled from the ODrive
-object and appended to the pandas dataframe.
-'''
-while timer < timeout:
-    if  (last_time != timer):
-        last_time = timer
-        print(last_time)
-        df = df.append({'timestamp': timer,
-                        'current': odrv0.ibus},
-                        ignore_index=True)
-
-    # Set the name of this file as you see fit.
-    df.to_csv('no_disturbance_15.csv', index=False)
 
 vel_thread.join()
 tim_thread.join()
