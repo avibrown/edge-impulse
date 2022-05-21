@@ -1,9 +1,7 @@
-/* Includes ------------------------------------------------------------- */
-#include <odrive_3_inferencing.h>
+/* Includes ---------------------------------------------------------------- */
+#include <odrive_06_inferencing.h>
 #include <HardwareSerial.h>
 #include <ODriveArduino.h>
-#include <Wire.h>
-#include <Arduino.h>
 
 // Edge Impulse parameters
 #define FREQUENCY_HZ        EI_CLASSIFIER_FREQUENCY
@@ -12,51 +10,47 @@ static float features[EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE] = {};
 static unsigned long last_interval_ms = 0;
 size_t feature_ix = 0;
 
-// Setting up the ODrive object
 HardwareSerial& odrive_serial = Serial1;
 ODriveArduino odrive(odrive_serial);
 
-// Initialize power variable
-float power;
+// Printing with stream operator helper functions
+template<class T> inline Print& operator <<(Print &obj,     T arg) {
+  obj.print(arg);
+  return obj;
+}
+template<>        inline Print& operator <<(Print &obj, float arg) {
+  obj.print(arg, 4);
+  return obj;
+}
 
-/* Function declarations ------------------------------------------------- */
+float power;
+float anomaly_threshold = 1.2;
+
 int raw_feature_get_data(size_t offset, size_t length, float *out_ptr) {
     memcpy(out_ptr, features + offset, length * sizeof(float));
     return 0;
 }
 
-void ei_printf(const char *format, ...) {
-    static char print_buf[1024] = { 0 };
-
-    va_list args;
-    va_start(args, format);
-    int r = vsnprintf(print_buf, sizeof(print_buf), format, args);
-    va_end(args);
-
-    if (r > 0) {
-        Serial.write(print_buf);
-    }
-}
-
-// Run once
 void setup()
 {
+    // put your setup code here, to run once:
     Serial.begin(115200);
-    while (!Serial);
-    Serial.println("Main serial connection opened.");
-    
     odrive_serial.begin(115200);
-    while (!odrive_serial);
-    Serial.println("ODrive serial connection opened.");
+    Serial.println("Edge Impulse Inferencing Demo");
+
+    pinMode(5, OUTPUT);
+    digitalWrite(5, LOW);
 }
 
-// Run in a loop
-void loop() {
+void loop()
+{
     if (millis() > last_interval_ms + INTERVAL_MS) {
         last_interval_ms = millis();
 
-        // Get power reading from ODrive
-        power = odrive.GetElectricalPower(0);
+        // Read power from ODrive UART
+        odrive_serial << "r axis0.controller.electrical_power\n";
+        // Save power reading to variable
+        power = odrive.readFloat();
 
         // Put power reading in feature array
         features[feature_ix++] = power;
@@ -87,6 +81,14 @@ void loop() {
         #endif
             // reset features frame
             feature_ix = 0;
+
+        // Turn on fault LED if anomaly value passes threshold value
+        if (result.anomaly >= anomaly_threshold) {
+          digitalWrite(5, HIGH);
+          }
+        else {          
+          digitalWrite(5, LOW);
+          }
         }
-    }
+    }    
 }
