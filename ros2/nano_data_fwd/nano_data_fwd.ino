@@ -14,8 +14,7 @@ static unsigned long last_interval_ms = 0;
 
 void setup(void) {
   Serial.begin(115200);
-  while (!Serial)
-    delay(10);
+  delay(10);
     
   if (!mpu.begin()) {
       delay(10);
