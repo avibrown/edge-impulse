@@ -11,17 +11,17 @@ class ClassificationNode(Node):
         super().__init__("edge_impulse_classifier")
 
         # Sensor data subscriber
-        self.subscriber_ = self.create_subscription(Float32MultiArray, "sensor_stream", self.callback_fill_buffer, 10)
+        self.subscriber_ = self.create_subscription(Float32MultiArray, "sensor_stream", self.callback_fill_buffer, 10) # 1: Change subscription
 
         # Inference publisher
         self.publisher_ = self.create_publisher(String, "inference_stream", 10)
-        self.timer_ = self.create_timer(1, self.classify) # 1: Adjust timing
+        self.timer_ = self.create_timer(1, self.classify) # 2: Adjust timing
 
         # Create Classifier object based on Edge Impulse model file
         self.classifier = Classifier('modelfile.eim')
         
         self.buffer = []
-        self.buffer_full_len = None #2: Set max length of buffer array
+        self.buffer_full_len = None #3: Set max length of buffer array
 
         self.get_logger().info("Edge Impulse node opened.")
 
